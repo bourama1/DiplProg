@@ -1,0 +1,1 @@
+.\WinAudit.exe /r=gsoPxuTUeERNtnzDaIbMpmidcSArCOHG /f=audit.html /T=datetime
