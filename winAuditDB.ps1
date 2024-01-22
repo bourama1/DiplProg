@@ -1,0 +1,1 @@
+Start-Process -FilePath ".\WinAudit.exe" -ArgumentList "/r=gsoPxuTUeERNtnzDaIbMpmidcSArCOHG", "/f=DBQ=D:\Documents\DiplProg\Template.mdb;Driver={Microsoft Access Driver (*.mdb)};" -Wait
