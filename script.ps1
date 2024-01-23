@@ -1,6 +1,6 @@
 # Textové rozhraní
 Write-Host "Stiskni 1 => WinAudit.exe ulozit do html a porovnat (Python)"
-Write-Host "Stiskni 2 => WinAudit.exe ulozit do databaze"
+Write-Host "Stiskni 2 => WinAudit.exe porovnat databaze a rozdily ulozit do tabulky Rozdily"
 Write-Host "Stiskni 3 => WMIC"
 Write-Host "Stiskni 0 => Ukonci program"
 

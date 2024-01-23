@@ -1,6 +1,6 @@
 BIOS Information:
 -----------------
-Caption: 3404
+Caption: 3405
 Description: 3405
 InstallDate: 
 Name: 3405
@@ -25,7 +25,7 @@ EmbeddedControllerMinorVersion: 255
 InstallableLanguages: 9
 ListOfLanguages: en|US|iso8859-1 fr|FR|iso8859-1 zh|TW|unicode zh|CN|unicode ja|JP|unicode de|DE|iso8859-1 es|ES|iso8859-1 ru|RU|iso8859-5 ko|KR|unicode
 ReleaseDate: 12/13/2023 01:00:00
-SMBIOSBIOSVersion: 3405
+SMBIOSBIOSVersion: 3404
 SMBIOSMajorVersion: 3
 SMBIOSMinorVersion: 3
 SMBIOSPresent: True
