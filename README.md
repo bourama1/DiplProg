@@ -23,3 +23,5 @@
 ## Ukazka
 ### WMIC Bios version change
 https://i.imgur.com/BlfSag2.png
+### MDB Rozdily table
+https://i.imgur.com/DG4BDIx.png
