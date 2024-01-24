@@ -37,12 +37,12 @@ function ExecuteQuery ($databasePath, $sqlQuery) {
 # SQL dotaz pro vybrání dat z tabulky
 $sqlQuery1 = @"
 SELECT * FROM Audit_Data
-WHERE Audit_ID = 3
+WHERE Audit_ID = 5
 "@
 
 $sqlQuery2 = @"
 SELECT * FROM Audit_Data
-WHERE Audit_ID = 4
+WHERE Audit_ID = 6
 "@
 
 # Vykonání dotazu pro obě databáze

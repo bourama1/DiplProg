@@ -2,6 +2,7 @@
 Write-Host "Stiskni 1 => WinAudit.exe ulozit do html a porovnat (Python)"
 Write-Host "Stiskni 2 => WinAudit.exe porovnat databaze a rozdily ulozit do tabulky Rozdily"
 Write-Host "Stiskni 3 => WMIC"
+Write-Host "Stiskni 4 => firewall rules"
 Write-Host "Stiskni 0 => Ukonci program"
 
 # Čtení vstupu od uživatele
@@ -20,6 +21,10 @@ switch ($userInput) {
     '3' {
         Write-Host "Probíhá akce 3"
         & ".\bios.ps1"
+    }
+    '4' {
+        Write-Host "Probíhá akce 4"
+        & ".\firewallRules.ps1"
     }
     '0' {
         Write-Host "Ukončuji program"
