@@ -21,7 +21,9 @@
 5. Yao, Jiewen, and Vincent Zimmer. "Building Secure Firmware." Apress: New York, NY, USA (2020).
 
 ## Ukazka
-### WMIC Bios version change
+### WMIC Bios - TEST version change
 https://i.imgur.com/BlfSag2.png
 ### MDB Rozdily table
 https://i.imgur.com/DG4BDIx.png
+### Firewall Rules output and comparasion example
+![VSCodium_o1FHDBpZ35](https://github.com/bourama1/DiplProg/assets/73535167/c4dbd958-a470-4e56-8da4-f3a89527595e)
