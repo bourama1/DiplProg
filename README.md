@@ -24,6 +24,6 @@
 ### WMIC Bios - TEST version change
 https://i.imgur.com/BlfSag2.png
 ### MDB Rozdily table
-https://i.imgur.com/DG4BDIx.png
+![image](https://github.com/bourama1/DiplProg/assets/73535167/16d909f8-e5df-46e4-89f4-7623f00e31e5)
 ### Firewall Rules output and comparasion example
 ![VSCodium_o1FHDBpZ35](https://github.com/bourama1/DiplProg/assets/73535167/c4dbd958-a470-4e56-8da4-f3a89527595e)
