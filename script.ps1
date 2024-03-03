@@ -1,8 +1,9 @@
 # Textové rozhraní
 Write-Host "Stiskni 1 => WinAudit.exe ulozit do html a porovnat (Python)"
-Write-Host "Stiskni 2 => WinAudit.exe porovnat databaze a rozdily ulozit do tabulky Rozdily"
-Write-Host "Stiskni 3 => WMIC"
-Write-Host "Stiskni 4 => firewall rules"
+Write-Host "Stiskni 2 => WinAudit.exe ulozit databaze"
+Write-Host "Stiskni 3 => Porovnani dvou poslednich zaznamu auditu z databaze a rozdily ulozit do tabulky Rozdily"
+Write-Host "Stiskni 4 => WMIC"
+Write-Host "Stiskni 5 => firewall rules"
 Write-Host "Stiskni 0 => Ukonci program"
 
 # Čtení vstupu od uživatele
@@ -16,14 +17,18 @@ switch ($userInput) {
     }
     '2' {
         Write-Host "Probíhá akce 2"
-        & ".\winAuditDB.ps1"
+        & ".\createWinAuditDB.ps1"
     }
     '3' {
         Write-Host "Probíhá akce 3"
-        & ".\bios.ps1"
+        & ".\compareWinAuditDB.ps1"
     }
     '4' {
         Write-Host "Probíhá akce 4"
+        & ".\bios.ps1"
+    }
+    '5' {
+        Write-Host "Probíhá akce 5"
         & ".\firewallRules.ps1"
     }
     '0' {
