@@ -19,3 +19,10 @@
 3. Choi, Seul-Ki, Chung-Huang Yang, and Jin Kwak. "System Hardening and Security Monitoring for IoT Devices to Mitigate IoT Security Vulnerabilities and Threats." KSII Transactions on Internet & Information Systems 12.2 (2018).
 4. Dewri, Rinku, et al. "Optimal security hardening using multi-objective optimization on attack tree models of networks." Proceedings of the 14th ACM conference on Computer and communications security. 2007.
 5. Yao, Jiewen, and Vincent Zimmer. "Building Secure Firmware." Apress: New York, NY, USA (2020).
+## TODO
+- [x] zmenit vystup firewallu na db
+- [x] zmenit vystup bios stejne, neni nutne
+- [x] zmenit porovnani winaudit vuci kategoriim
+  - [x] kategorie 1000 item 4 ?TODO - moc to nepomohlo na mym localu
+  - [x] kategorie 4200 item 1
+  - [x] kategorie 7800 vynechat item 7
