@@ -1,7 +1,7 @@
 # Načtení souboru s funkcemi
 . .\functions.ps1
 
-# Získání cílové databáze pro WinAudit report
+# Získání cílové databáze s WinAudit reporty
 Write-Host "Vyberte databázi s WinAudit reporty:"
 $databasePath = GetFileName("D:\Documents\DiplProg")
 
