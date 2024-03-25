@@ -2,7 +2,7 @@
 . .\functions.ps1
 
 # Získání cílové databáze pro WinAudit report
-Write-Host "Vyberte databázi pro ulozeni informaci:"
+Write-Host "Vyberte databázi pro ulozeni informaci o pravidlech BIOSu:"
 $dbPath = GetFileName("D:\Documents\DiplProg")
 
 # Kontrola, zda tabulka 'BiosInfo' existuje

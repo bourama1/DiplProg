@@ -1,11 +1,12 @@
 do {
     # Textové rozhraní
     Write-Host "Stiskni 1 => WinAudit.exe - ulozit do html a porovnat (Python)"
-    Write-Host "Stiskni 2 => WinAudit.exe - ulozit databaze"
+    Write-Host "Stiskni 2 => WinAudit.exe - ulozit informace z WinAudit do databaze"
     Write-Host "Stiskni 3 => WinAudit.exe - porovnani dvou poslednich zaznamu auditu z databaze a rozdily ulozit do tabulky Rozdily"
     Write-Host "Stiskni 4 => WMIC - ulozit informace o BIOS do databaze"
     Write-Host "Stiskni 5 => WMIC - porovnani dvou poslednich zaznamu WMIC z databaze a rozdily ulozit do tabulky RozdilyWMIC"
-    Write-Host "Stiskni 6 => firewall rules"
+    Write-Host "Stiskni 6 => Firewall rules - ulozit informace o Firewall rules do databaze"
+    Write-Host "Stiskni 7 => Firewall rules - porovnani dvou poslednich zaznamu Firewall rules z databaze a rozdily ulozit do tabulky RozdilyFirewall"
     Write-Host "Stiskni 0 => Ukonci program"
 
     # Čtení vstupu od uživatele
@@ -35,7 +36,11 @@ do {
         }
         '6' {
             Write-Host "Probíhá akce 6"
-            & ".\firewallRules.ps1"
+            & ".\createFirewallRulesDB.ps1"
+        }
+        '7' {
+            Write-Host "Probíhá akce 7"
+            & ".\compareFirewallRulesDB.ps1"
         }
         '0' {
             Write-Host "Ukončuji program"
