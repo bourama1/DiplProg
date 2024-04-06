@@ -7,6 +7,8 @@ do {
     Write-Host "Stiskni 5 => WMIC - porovnani dvou poslednich zaznamu WMIC z databaze a rozdily ulozit do tabulky RozdilyWMIC"
     Write-Host "Stiskni 6 => Firewall rules - ulozit informace o Firewall rules do databaze"
     Write-Host "Stiskni 7 => Firewall rules - porovnani dvou poslednich zaznamu Firewall rules z databaze a rozdily ulozit do tabulky RozdilyFirewall"
+    Write-Host "Stiskni 8 => Local Policies - ulozit informace o Local Policies do databaze - ! potreba admin pravo !"
+    Write-Host "Stiskni 9 => Local Policies - porovnani dvou poslednich zaznamu Local Policies z databaze a rozdily ulozit do tabulky RozdilyPolicies"
     Write-Host "Stiskni 0 => Ukonci program"
 
     # Čtení vstupu od uživatele
@@ -41,6 +43,14 @@ do {
         '7' {
             Write-Host "Probíhá akce 7"
             & ".\compareFirewallRulesDB.ps1"
+        }
+        '8' {
+            Write-Host "Probíhá akce 8"
+            & ".\createLocalPoliciesDB.ps1"
+        }
+        '9' {
+            Write-Host "Probíhá akce 9"
+            & ".\compareLocalPoliciesDB.ps1"
         }
         '0' {
             Write-Host "Ukončuji program"

@@ -6,7 +6,8 @@ Write-Host "Vyberte databázi pro ukládání informací o pravidlech firewall:"
 $databasePath = GetFileName("D:\Documents\DiplProg")
 
 # Kontrola, zda tabulka 'FirewallRules' existuje
-if (-not (TableExists -tableName "FirewallRules" -databasePath $databasePath)) {
+$tableName = "FirewallRules"
+if (-not (TableExists -tableName $tableName -databasePath $databasePath)) {
   # Tabulka neexistuje, vytvoříme ji ### Problem s nekterymi z nazvu sloupcu, proto nutne pouzit hranate zavorky aby Access neinterpretoval jako rezervovaná slova
   $createQuery = @"
 CREATE TABLE FirewallRules (
@@ -48,14 +49,7 @@ $firewallRules = Get-NetFirewallRule | ForEach-Object {
 }
 
 # Načtení maximální hodnoty Audit_ID
-$maxAuditIdQuery = "SELECT MAX(Audit_ID) FROM FirewallRules"
-$maxAuditIdResult = ExecuteQuery -databasePath $databasePath -sqlQuery $maxAuditIdQuery
-if ($null -ne $maxAuditIdResult -and -not ($maxAuditIdResult[0] -eq [System.DBNull]::Value)) {
-  $maxAuditId = [int]$maxAuditIdResult[0]
-} else {
-  $maxAuditId = 0
-}
-$newAuditId = $maxAuditId + 1
+$newAuditId = Get-NewAuditId -databasePath $databasePath -tableName $tableName
 
 # Vkládání pravidel firewall do databáze
 foreach ($rule in $firewallRules) {

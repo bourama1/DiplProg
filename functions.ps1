@@ -173,3 +173,41 @@ function GetTableColumns {
 
     return $columns
 }
+
+<#
+.SYNOPSIS
+    Generates a new Audit_ID for insertion into a specified table in a database.
+.DESCRIPTION
+    This function generates a new Audit_ID for insertion into a specified table in a database. It retrieves the maximum Audit_ID value from the table, increments it by 1, and returns the new Audit_ID.
+.PARAMETER databasePath
+    The path to the database where the table exists.
+.PARAMETER tableName
+    The name of the table where the new Audit_ID will be inserted.
+.OUTPUTS
+    System.Int32
+    Returns the new Audit_ID as an integer.
+.EXAMPLE
+    Get-NewAuditId -databasePath "C:\Data\Database.mdb" -tableName "AuditTable"
+    This example generates a new Audit_ID for insertion into the table "AuditTable" in the database located at "C:\Data\Database.mdb" and returns the new Audit_ID as an integer.
+#>
+function Get-NewAuditId {
+    param(
+        [string]$databasePath,
+        [string]$tableName
+    )
+
+    # Sestavení SQL dotazu pro načtení maximální hodnoty Audit_ID z dané tabulky
+    $maxAuditIdQuery = "SELECT MAX(Audit_ID) FROM $tableName"
+    $maxAuditIdResult = ExecuteQuery -databasePath $databasePath -sqlQuery $maxAuditIdQuery
+
+    if ($null -ne $maxAuditIdResult -and -not ($maxAuditIdResult[0] -eq [System.DBNull]::Value)) {
+        $maxAuditId = [int]$maxAuditIdResult[0]
+    } else {
+        $maxAuditId = 0
+    }
+
+    # Inkrementace Audit_ID pro nové vložení
+    $newAuditId = $maxAuditId + 1
+
+    return $newAuditId
+}
