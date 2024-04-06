@@ -1,9 +1,14 @@
+param(
+  [string]$databasePath = $null
+)
+
 # Načtení souboru s funkcemi
 . .\functions.ps1
 
-# Získání cílové databáze pro ukládání informací o pravidlech firewall
-Write-Host "Vyberte databázi pro ukládání informací o pravidlech firewall:"
-$databasePath = GetFileName("D:\Documents\DiplProg")
+if (-not $databasePath) {
+  Write-Host "Vyberte databázi:"
+  $databasePath = GetFileName("D:\Documents\DiplProg")
+}
 
 # Kontrola, zda tabulka 'FirewallRules' existuje
 $tableName = "FirewallRules"

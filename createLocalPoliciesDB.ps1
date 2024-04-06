@@ -1,3 +1,7 @@
+param(
+  [string]$databasePath = $null
+)
+
 # Načtení souboru s funkcemi
 . .\functions.ps1
 
@@ -8,9 +12,10 @@ try {
   # Export lokálních bezpečnostních politik do dočasného souboru
   & secedit /export /cfg $tempFile
 
-  # Získání cesty k databázi
-  Write-Host "Vyberte databázi pro ukládání informací:"
-  $databasePath = GetFileName("D:\Documents\DiplProg")
+  if (-not $databasePath) {
+    Write-Host "Vyberte databázi:"
+    $databasePath = GetFileName("D:\Documents\DiplProg")
+	}
 
   # Kontrola, zda existuje tabulka LocalPolicies, a její vytvoření
   $newTableName = "LocalPolicies"
