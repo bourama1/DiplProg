@@ -1,6 +1,6 @@
 do {
     # Textové rozhraní
-    Write-Host "Stiskni 1 => WinAudit.exe - ulozit do html a porovnat (Python)"
+    Write-Host "Stiskni 1 => Spustit vše - ! potreba admin pravo !"
     Write-Host "Stiskni 2 => WinAudit.exe - ulozit informace z WinAudit do databaze"
     Write-Host "Stiskni 3 => WinAudit.exe - porovnani dvou poslednich zaznamu auditu z databaze a rozdily ulozit do tabulky Rozdily"
     Write-Host "Stiskni 4 => WMIC - ulozit informace o BIOS do databaze"
@@ -11,14 +11,39 @@ do {
     Write-Host "Stiskni 9 => Local Policies - porovnani dvou poslednich zaznamu Local Policies z databaze a rozdily ulozit do tabulky RozdilyPolicies"
     Write-Host "Stiskni 0 => Ukonci program"
 
-    # Čtení vstupu od uživatele
     $userInput = Read-Host "Zadejte číslo akce"
 
-    # Zpracování vstupu
     switch ($userInput) {
         '1' {
-            Write-Host "Probíhá akce 1"
-            & ".\winAuditHTML.ps1"
+            Write-Host "Probíhá komplet spuštění"
+            $actions = @(
+                { & ".\createWinAuditDB.ps1" },
+                { & ".\compareWinAuditDB.ps1" },
+                { & ".\createBiosDB.ps1" },
+                { & ".\compareBiosDB.ps1" },
+                { & ".\createFirewallRulesDB.ps1" },
+                { & ".\compareFirewallRulesDB.ps1" },
+                { & ".\createLocalPoliciesDB.ps1" },
+                { & ".\compareLocalPoliciesDB.ps1" }
+            )
+
+            $actionDescriptions = @(
+                "WinAudit.exe - ukládání informací do databáze",
+                "WinAudit.exe - porovnání a ukládání rozdílů",
+                "WMIC - ukládání informací do databáze",
+                "WMIC - porovnání a ukládání rozdílů",
+                "Firewall rules - ukládání informací do databáze",
+                "Firewall rules - porovnání a ukládání rozdílů",
+                "Local Policies - ukládání informací do databáze",
+                "Local Policies - porovnání a ukládání rozdílů"
+            )
+
+            for ($i = 0; $i -lt $actions.Count; $i++) {
+                Write-Progress -Activity "Spouštění skriptů" -Status $actionDescriptions[$i] -PercentComplete (($i / $actions.Count) * 100)
+                $actions[$i].Invoke()
+            }
+            Write-Progress -Activity "Spouštění skriptů" -Status "Dokončeno" -Completed
+            break
         }
         '2' {
             Write-Host "Probíhá akce 2"
