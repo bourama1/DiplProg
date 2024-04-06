@@ -16,6 +16,7 @@ CREATE TABLE FirewallRules (
   Protocol TEXT(255),
   LocalPort TEXT(255),
   RemotePort TEXT(255),
+  LocalAddress TEXT(255),
   RemoteAddress TEXT(255),
   [Enabled] TEXT(255),
   Profile TEXT(255),
@@ -28,7 +29,7 @@ CREATE TABLE FirewallRules (
 }
 
 # Získání pravidel firewall a jejich formátování pro databázi
-$firewallRules = Get-NetFirewallRule -Action Allow -Enabled True | ForEach-Object {
+$firewallRules = Get-NetFirewallRule | ForEach-Object {
   $portFilter = $_ | Get-NetFirewallPortFilter
   $addressFilter = $_ | Get-NetFirewallAddressFilter
 
@@ -37,6 +38,7 @@ $firewallRules = Get-NetFirewallRule -Action Allow -Enabled True | ForEach-Objec
     Protocol = $portFilter.Protocol
     LocalPort = $portFilter.LocalPort
     RemotePort = $portFilter.RemotePort
+		LocalAddress = $addressFilter.LocalAddress
     RemoteAddress = $addressFilter.RemoteAddress
     Enabled = $_.Enabled
     Profile = $_.Profile.ToString()
@@ -58,8 +60,8 @@ $newAuditId = $maxAuditId + 1
 # Vkládání pravidel firewall do databáze
 foreach ($rule in $firewallRules) {
   $insertQuery = @"
-INSERT INTO FirewallRules (Audit_ID, [Name], Protocol, LocalPort, RemotePort, RemoteAddress, [Enabled], Profile, [Direction], [Action])
-VALUES ($newAuditId, '$($rule.Name)', '$($rule.Protocol)', '$($rule.LocalPort)', '$($rule.RemotePort)', '$($rule.RemoteAddress)',
+INSERT INTO FirewallRules (Audit_ID, [Name], Protocol, LocalPort, RemotePort, LocalAddress, RemoteAddress, [Enabled], Profile, [Direction], [Action])
+VALUES ($newAuditId, '$($rule.Name)', '$($rule.Protocol)', '$($rule.LocalPort)', '$($rule.RemotePort)', '$($rule.LocalAddress)' , '$($rule.RemoteAddress)',
 '$($rule.Enabled)', '$($rule.Profile)', '$($rule.Direction)', '$($rule.Action)')
 "@
   ExecuteQuery -databasePath $databasePath -sqlQuery $insertQuery

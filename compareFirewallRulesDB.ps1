@@ -35,6 +35,7 @@ CREATE TABLE RozdilyFirewall (
     Protocol TEXT(255),
     LocalPort TEXT(255),
     RemotePort TEXT(255),
+    LocalAddress TEXT(255),
     RemoteAddress TEXT(255),
     [Enabled] TEXT(255),
     Profile TEXT(255),
@@ -45,13 +46,13 @@ CREATE TABLE RozdilyFirewall (
 ExecuteQuery -databasePath $databasePath -sqlQuery $createQuery
 
 # Porovnání dat bez zahrnutí ID do porovnání
-$differences = Compare-Object -ReferenceObject $data1 -DifferenceObject $data2 -Property ("Name", "Protocol", "LocalPort", "RemotePort", "RemoteAddress", "Enabled", "Profile", "Direction", "Action") -PassThru
+$differences = Compare-Object -ReferenceObject $data1 -DifferenceObject $data2 -Property ("Name", "Protocol", "LocalPort", "RemotePort", "LocalAddress", "RemoteAddress", "Enabled", "Profile", "Direction", "Action") -PassThru
 
 # Uložení rozdílů do tabulky
 foreach ($difference in $differences) {
     $insertDifferenceQuery = @"
-INSERT INTO RozdilyFirewall (Audit_ID, [Name], Protocol, LocalPort, RemotePort, RemoteAddress, [Enabled], Profile, [Direction], [Action])
-VALUES ('$($difference.Audit_ID)', '$($difference.Name)', '$($difference.Protocol)', '$($difference.LocalPort)', '$($difference.RemotePort)', '$($difference.RemoteAddress)', 
+INSERT INTO RozdilyFirewall (Audit_ID, [Name], Protocol, LocalPort, RemotePort, LocalAddress, RemoteAddress, [Enabled], Profile, [Direction], [Action])
+VALUES ('$($difference.Audit_ID)', '$($difference.Name)', '$($difference.Protocol)', '$($difference.LocalPort)', '$($difference.RemotePort)', '$($difference.LocalAddress)' , '$($difference.RemoteAddress)',
 '$($difference.Enabled)', '$($difference.Profile)', '$($difference.Direction)', '$($difference.Action)')
 "@
     ExecuteQuery -databasePath $databasePath -sqlQuery $insertDifferenceQuery

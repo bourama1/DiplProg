@@ -46,5 +46,5 @@ foreach ($difference in $differences) {
     $insertQuery = "INSERT INTO RozdilyBios (Audit_ID, $columnsToInsert) VALUES ('$($difference.ID)', $valuesToInsert)"
     ExecuteQuery -databasePath $databasePath -sqlQuery $insertQuery
 }
-Write-Host "Rozdíly byly úspěšně uloženy do tabulky RozdilyBios."
 
+Write-Host "Rozdíly byly úspěšně uloženy do tabulky RozdilyBios."
