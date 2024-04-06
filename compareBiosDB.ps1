@@ -1,55 +1,50 @@
 # Načtení souboru s funkcemi
 . .\functions.ps1
 
-# Získání cílové databáze s WMIC reporty
-Write-Host "Vyberte databázi s WMIC reporty:"
+# Získání cílové databáze s Bios reporty
+Write-Host "Vyberte databázi s Bios reporty:"
 $databasePath = GetFileName("D:\Documents\DiplProg")
 
-# SQL dotaz pro vybrání dat z tabulky
-$sqlQuery1 = @"
-SELECT * FROM BiosInfo
-WHERE ID = (SELECT MAX(ID) FROM BiosInfo)
-"@
+# Zjisteni jestli jiz existuje tabulka rozdily, popr. jeji smazani
+$newTableName = "RozdilyBios"
+if (TableExists -tableName $newTableName -databasePath $databasePath) {
+    DropTable -tableName $newTableName -databasePath $databasePath
+}
 
-$sqlQuery2 = @"
-SELECT * FROM BiosInfo
-WHERE ID = (SELECT MAX(ID) FROM BiosInfo WHERE ID < (SELECT MAX(ID) FROM BiosInfo))
-"@
+# Získání seznamu sloupců z tabulky BiosInfo
+$tableName = "BiosInfo"
+$columns = GetTableColumns -databasePath $databasePath -tableName $tableName
+
+# Sestavení SQL dotazu pro vytvoření tabulky RozdilyBios s dynamickými sloupci
+$createQuery = "CREATE TABLE $newTableName (ID AUTOINCREMENT PRIMARY KEY, Audit_ID INT, "
+foreach ($column in $columns -ne 'ID') {
+    $createQuery += "$column TEXT(255), "
+}
+$createQuery = $createQuery.TrimEnd(", ") + ")"
+
+# Vytvoření tabulky
+ExecuteQuery -databasePath $databasePath -sqlQuery $createQuery
+
+# Odebrání ID sloupce pro porovnání, pokud je mezi sloupci
+$columnsToCompare = $columns -ne 'ID'
+
+# Dynamické sestavení SQL dotazů (zůstává stejné)
+$sqlQuery1 = "SELECT * FROM BiosInfo WHERE ID = (SELECT MAX(ID) FROM BiosInfo)"
+$sqlQuery2 = "SELECT * FROM BiosInfo WHERE ID = (SELECT MAX(ID) FROM BiosInfo WHERE ID < (SELECT MAX(ID) FROM BiosInfo))"
 
 # Vykonání dotazu pro obě databáze
 $data1 = ExecuteQuery -databasePath $databasePath -sqlQuery $sqlQuery1
 $data2 = ExecuteQuery -databasePath $databasePath -sqlQuery $sqlQuery2
 
-# Zjisteni jestli jiz existuje tabulka rozdily, popr. jeji smazani
-$tableName = "RozdilyWMIC"
-if (TableExists $tableName $databasePath) {
-    DropTable $tableName $databasePath
-}
+# Dynamické porovnání dat bez zahrnutí ID do porovnání
+$differences = Compare-Object -ReferenceObject $data1 -DifferenceObject $data2 -Property $columnsToCompare -PassThru
 
-# Vytvoření tabulky v nové databázi pro uložení rozdílů
-$createQuery = @"
-CREATE TABLE RozdilyWMIC (
-    ID AUTOINCREMENT PRIMARY KEY,
-    Audit_ID INT,
-    Manufacturer TEXT(255),
-    SerialNumber TEXT(255),
-    Version TEXT(255),
-    BIOSVersion TEXT(255)
-)
-"@
-ExecuteQuery -databasePath $databasePath -sqlQuery $createQuery
-
-# Porovnání dat bez zahrnutí ID do porovnání
-$differences = Compare-Object -ReferenceObject $data1 -DifferenceObject $data2 -Property ("Manufacturer", "SerialNumber", "Version", "BIOSVersion") -PassThru
-
-
-# Iterace přes nalezené rozdíly a jejich vložení do tabulky RozdilyWMIC
+# Iterace přes nalezené rozdíly a jejich vložení do tabulky RozdilyBios
 foreach ($difference in $differences) {
-    # Příprava SQL dotazu pro vložení rozdílu do tabulky
-    $insertQuery = @"
-INSERT INTO RozdilyWMIC (Audit_ID, Manufacturer, SerialNumber, Version, BIOSVersion)
-VALUES ('$($difference.ID)', '$($difference.Manufacturer)', '$($difference.SerialNumber)', '$($difference.Version)', '$($difference.BIOSVersion)')
-"@
+    $valuesToInsert = ($columnsToCompare | ForEach-Object { "'" + $difference.$_ + "'" }) -join ', '
+    $columnsToInsert = ($columnsToCompare -join ', ')
+    $insertQuery = "INSERT INTO RozdilyBios (Audit_ID, $columnsToInsert) VALUES ('$($difference.ID)', $valuesToInsert)"
     ExecuteQuery -databasePath $databasePath -sqlQuery $insertQuery
 }
-Write-Host "Rozdíly byly úspěšně uloženy do tabulky RozdilyWMIC."
+Write-Host "Rozdíly byly úspěšně uloženy do tabulky RozdilyBios."
+

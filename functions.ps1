@@ -122,3 +122,54 @@ function DropTable($tableName, $databasePath) {
     $sqlQuery = "DROP TABLE [$tableName];"
     ExecuteQuery -databasePath $databasePath -sqlQuery $sqlQuery
 }
+
+<#
+.SYNOPSIS
+    Retrieves the column names of a table in a database.
+.DESCRIPTION
+    This function connects to a database using the provided database path and retrieves the column names of a specified table. It uses the OleDbSchemaTable to get the schema of the table and then extracts the column names from it.
+.PARAMETER databasePath
+    The path to the database where the table exists.
+.PARAMETER tableName
+    The name of the table for which the column names should be retrieved.
+.OUTPUTS
+    System.String[]
+    Returns an array of column names as strings.
+.EXAMPLE
+    GetTableColumns -databasePath "C:\Data\Database.mdb" -tableName "Customers"
+    This example retrieves the column names of the table "Customers" in the database located at "C:\Data\Database.mdb" and returns them as an array of strings.
+#>
+function GetTableColumns {
+    param(
+        [string]$databasePath,
+        [string]$tableName
+    )
+
+    # Inicializace seznamu sloupců
+    $columns = @()
+
+    # Definice připojovacího řetězce
+    $connectionString = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$databasePath"
+
+    # Vytvoření připojení
+    $connection = New-Object -TypeName System.Data.OleDb.OleDbConnection -ArgumentList $connectionString
+    try {
+        $connection.Open()
+
+        # Získání schema tabulky
+        $tableSchema = $connection.GetOleDbSchemaTable([System.Data.OleDb.OleDbSchemaGuid]::Columns, ($null, $null, $tableName, $null))
+
+        # Procházení schema a sběr názvů sloupců
+        $tableSchema | ForEach-Object {
+            $columns += $_["COLUMN_NAME"]
+        }
+    }
+    catch {
+        Write-Error "Nelze se připojit k databázi nebo získat schema tabulky: $_"
+    }
+    finally {
+        $connection.Close()
+    }
+
+    return $columns
+}
