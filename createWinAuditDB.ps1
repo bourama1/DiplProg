@@ -6,6 +6,6 @@ Write-Host "Vyberte databázi pro WinAudit report:"
 $databasePath = GetFileName("D:\Documents\DiplProg")
 
 # Vytvoření WinAudit Reportu
-Write-Host "Probíhá proces"
 Start-Process -FilePath ".\WinAudit.exe" -ArgumentList "/r=gsoPxuTUeERNtnzDaIbMpmidcSArCOHG", "/f=DBQ=$databasePath;Driver={Microsoft Access Driver (*.mdb)};" -Wait
-Write-Host "Audit vytvoren"
+
+Write-Host "Data z WinAudit byla úspěšně uložena do databáze."

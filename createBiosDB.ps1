@@ -38,4 +38,4 @@ foreach ($prop in $biosProperties) {
 $insertQuery = $insertQuery.TrimEnd(", ") + ")"
 
 ExecuteQuery -databasePath $dbPath -sqlQuery $insertQuery
-Write-Host "Data byla úspěšně uložena do databáze."
+Write-Host "Data o bios byla úspěšně uložena do databáze."
