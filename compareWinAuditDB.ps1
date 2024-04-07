@@ -99,7 +99,18 @@ $data2Category1000 = $data2 | Where-Object { $_.Category_ID -eq 1000 }
 
 # Porovnání dat pouze na základě Item_4 pro kategorii 1000
 $differencesCategory1000 = Compare-Object -ReferenceObject $data1Category1000 -DifferenceObject $data2Category1000 -Property Item_4 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-InsertDifferences($differencesCategory1000)
+$groupedDifferences = $differencesCategory1000 | Group-Object -Property Item_4
+
+$aggregatedDifferences = @()
+
+foreach ($group in $groupedDifferences) {
+    $firstDiff = $group.Group | Select-Object -First 1
+    $aggregatedDifferences += $firstDiff
+}
+
+# Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_4
+# Voláme InsertDifferences s tímto nově agregovaným seznamem
+InsertDifferences -differences $aggregatedDifferences
 
 # Načtení dat z kategorie 4200
 $data1Category4200 = $data1 | Where-Object { $_.Category_ID -eq 4200 }
@@ -107,7 +118,18 @@ $data2Category4200 = $data2 | Where-Object { $_.Category_ID -eq 4200 }
 
 # Porovnání dat pouze na základě Item_1 pro kategorii 4200
 $differencesCategory4200 = Compare-Object -ReferenceObject $data1Category4200 -DifferenceObject $data2Category4200 -Property Item_1 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-InsertDifferences($differencesCategory4200)
+$groupedDifferences = $differencesCategory4200 | Group-Object -Property Item_1
+
+$aggregatedDifferences = @()
+
+foreach ($group in $groupedDifferences) {
+    $firstDiff = $group.Group | Select-Object -First 1
+    $aggregatedDifferences += $firstDiff
+}
+
+# Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_4
+# Voláme InsertDifferences s tímto nově agregovaným seznamem
+InsertDifferences -differences $aggregatedDifferences
 
 ### Získání všech vlastností z prvního objektu
 $allProperties = $data1 | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name
@@ -126,9 +148,9 @@ $data2Category7800 = $data2 | Where-Object { $_.Category_ID -eq 7800 }
 $differencesCategory7800 = Compare-Object -ReferenceObject $data1Category7800 -DifferenceObject $data2Category7800 -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
 InsertDifferences($differencesCategory7800)
 
-# Zbytek dat pro další porovnání
-$data1Other = $data1 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 }
-$data2Other = $data2 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 }
+# Zbytek dat pro další porovnání + vyhozeni kategori 3600 (info o zaplneni RAM)
+$data1Other = $data1 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 -and $_.Category_ID -ne 3600 }
+$data2Other = $data2 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 -and $_.Category_ID -ne 3600 }
 
 # Specifikujte vlastnosti, které NEchcete porovnávat
 $excludeProperties = @('Audit_ID', 'Record_Ordinal', 'Computer_ID', 'Category_ID')

@@ -21,9 +21,9 @@ foreach ($prop in $biosProperties) {
 $createTableQuery = $createTableQuery.TrimEnd(", ") + ")"
 
 # Kontrola, zda tabulka 'BiosInfo' existuje
-if (-not (TableExists -tableName "BiosInfo" -databasePath $dbPath)) {
+if (-not (TableExists -tableName "BiosInfo" -databasePath $databasePath)) {
   # Tabulka neexistuje, vytvoříme ji
-  ExecuteQuery -databasePath $dbPath -sqlQuery $createTableQuery
+  ExecuteQuery -databasePath $databasePath -sqlQuery $createTableQuery
   Write-Host "Tabulka BiosInfo byla úspěšně vytvořena."
 }
 
@@ -42,5 +42,5 @@ foreach ($prop in $biosProperties) {
 }
 $insertQuery = $insertQuery.TrimEnd(", ") + ")"
 
-ExecuteQuery -databasePath $dbPath -sqlQuery $insertQuery
+ExecuteQuery -databasePath $databasePath -sqlQuery $insertQuery
 Write-Host "Data o bios byla úspěšně uložena do databáze."
