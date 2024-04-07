@@ -272,3 +272,42 @@ VALUES ('$($difference.Audit_ID)', '$($difference.Record_Ordinal)', '$($differen
         }
     }
 }
+
+<#
+.SYNOPSIS
+    Aggregates the grouped differences into a single result.
+.DESCRIPTION
+    This function takes a collection of grouped differences and aggregates them into a single result. It creates a new PSObject for each group and adds the necessary properties to it. It also filters and aggregates unique values for each item in the group.
+.PARAMETER groupedDifferences
+    The collection of grouped differences to be aggregated.
+.OUTPUTS
+    System.Collections.ObjectModel.Collection[psobject]
+    Returns a collection of aggregated differences as PSObjects.
+#>
+function AggregateDifferences {
+    param (
+        [Parameter(Mandatory = $true)]
+        [System.Collections.ObjectModel.Collection[psobject]]$groupedDifferences
+    )
+
+    $aggregatedDifferences = @()
+
+    foreach ($group in $groupedDifferences) {
+        $aggregatedRow = New-Object PSObject
+        Add-Member -InputObject $aggregatedRow -MemberType NoteProperty -Name Audit_ID -Value ($group.Group | Select-Object -First 1).Audit_ID
+        Add-Member -InputObject $aggregatedRow -MemberType NoteProperty -Name Record_Ordinal -Value ($group.Group | Select-Object -First 1).Record_Ordinal
+        Add-Member -InputObject $aggregatedRow -MemberType NoteProperty -Name Computer_ID -Value ($group.Group | Select-Object -First 1).Computer_ID
+        Add-Member -InputObject $aggregatedRow -MemberType NoteProperty -Name Category_ID -Value ($group.Group | Select-Object -First 1).Category_ID
+
+        for ($i = 1; $i -le 50; $i++) {
+            # Filtrace a agregace unikátních hodnot
+            $itemValues = $group.Group | ForEach-Object { $_.("Item_$i") } | Where-Object { $_ -ne $null } | Sort-Object -Unique
+            $uniqueItemValues = $itemValues -join "; "
+            Add-Member -InputObject $aggregatedRow -MemberType NoteProperty -Name ("Item_$i") -Value $uniqueItemValues
+        }
+
+        $aggregatedDifferences += $aggregatedRow
+    }
+
+    return $aggregatedDifferences
+}

@@ -100,13 +100,7 @@ $data2Category1000 = $data2 | Where-Object { $_.Category_ID -eq 1000 }
 # Porovnání dat pouze na základě Item_4 pro kategorii 1000
 $differencesCategory1000 = Compare-Object -ReferenceObject $data1Category1000 -DifferenceObject $data2Category1000 -Property Item_4 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
 $groupedDifferences = $differencesCategory1000 | Group-Object -Property Item_4
-
-$aggregatedDifferences = @()
-
-foreach ($group in $groupedDifferences) {
-    $firstDiff = $group.Group | Select-Object -First 1
-    $aggregatedDifferences += $firstDiff
-}
+$aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
 
 # Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_4
 # Voláme InsertDifferences s tímto nově agregovaným seznamem
@@ -119,15 +113,9 @@ $data2Category4200 = $data2 | Where-Object { $_.Category_ID -eq 4200 }
 # Porovnání dat pouze na základě Item_1 pro kategorii 4200
 $differencesCategory4200 = Compare-Object -ReferenceObject $data1Category4200 -DifferenceObject $data2Category4200 -Property Item_1 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
 $groupedDifferences = $differencesCategory4200 | Group-Object -Property Item_1
+$aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
 
-$aggregatedDifferences = @()
-
-foreach ($group in $groupedDifferences) {
-    $firstDiff = $group.Group | Select-Object -First 1
-    $aggregatedDifferences += $firstDiff
-}
-
-# Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_4
+# Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_1
 # Voláme InsertDifferences s tímto nově agregovaným seznamem
 InsertDifferences -differences $aggregatedDifferences
 
