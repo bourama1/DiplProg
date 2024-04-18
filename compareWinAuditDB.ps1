@@ -7,7 +7,7 @@ param(
 # Načtení souboru s funkcemi
 . .\functions.ps1
 
-Function AnalyzeDatabases($path1, $query1, $path2, $query2) {
+Function AnalyzeDatabases($path1, $query1, $path2, $query2, $excludedCategories = $null) {
   $tableName = "Rozdily"
   if (TableExists $tableName $path1) {
     DropTable $tableName $path1
@@ -78,37 +78,53 @@ CREATE TABLE Rozdily (
   $data1 = ExecuteQuery -databasePath $path1 -sqlQuery $query1
   $data2 = ExecuteQuery -databasePath $path2 -sqlQuery $query2
 
+  # Filtr dat pouze pokud existuje seznam vyloučených kategorií
+  if ($excludedCategories) {
+      $data1 = $data1 | Where-Object { $excludedCategories -notcontains $_.Category_ID }
+      $data2 = $data2 | Where-Object { $excludedCategories -notcontains $_.Category_ID }
+  }
+
   # Logika pro porovnání a zpracování dat
   CompareAndProcessData $data1 $data2 $path1
 }
 
 
 Function CompareAndProcessData($data1, $data2, $databasePath) {
-  # Načtení dat z kategorie 1000
+  # Kontrola, jestli data nejsou null
+  if (-not $data1 -or -not $data2) {
+    Write-Host "Jedna nebo obě sady dat jsou prázdné. Skript se předčasně ukončuje."
+    return
+  }
+
+  # Načtení dat z kategorie 1000 a kontrola null
   $data1Category1000 = $data1 | Where-Object { $_.Category_ID -eq 1000 }
   $data2Category1000 = $data2 | Where-Object { $_.Category_ID -eq 1000 }
 
-  # Porovnání dat pouze na základě Item_4 pro kategorii 1000
-  $differencesCategory1000 = Compare-Object -ReferenceObject $data1Category1000 -DifferenceObject $data2Category1000 -Property Item_4 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-  $groupedDifferences = $differencesCategory1000 | Group-Object -Property Item_4
-  $aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
+  if (-not $data1Category1000 -or -not $data2Category1000) {
+      Write-Host "Nebyla nalezena žádná data pro kategorii 1000."
+  } else {
+      $differencesCategory1000 = Compare-Object -ReferenceObject $data1Category1000 -DifferenceObject $data2Category1000 -Property Item_4 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
+      if ($differencesCategory1000) {
+          $groupedDifferences = $differencesCategory1000 | Group-Object -Property Item_4
+          $aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
+          InsertDifferences -differences $aggregatedDifferences -databasePath $databasePath
+      }
+  }
 
-  # Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_4
-  # Voláme InsertDifferences s tímto nově agregovaným seznamem
-  InsertDifferences -differences $aggregatedDifferences -databasePath $databasePath
-
-  # Načtení dat z kategorie 4200
+  # Načtení dat z kategorie 4200 a kontrola null
   $data1Category4200 = $data1 | Where-Object { $_.Category_ID -eq 4200 }
   $data2Category4200 = $data2 | Where-Object { $_.Category_ID -eq 4200 }
 
-  # Porovnání dat pouze na základě Item_1 pro kategorii 4200
-  $differencesCategory4200 = Compare-Object -ReferenceObject $data1Category4200 -DifferenceObject $data2Category4200 -Property Item_1 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-  $groupedDifferences = $differencesCategory4200 | Group-Object -Property Item_1
-  $aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
-
-  # Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_1
-  # Voláme InsertDifferences s tímto nově agregovaným seznamem
-  InsertDifferences -differences $aggregatedDifferences -databasePath $databasePath
+  if (-not $data1Category4200 -or -not $data2Category4200) {
+      Write-Host "Nebyla nalezena žádná data pro kategorii 4200."
+  } else {
+      $differencesCategory4200 = Compare-Object -ReferenceObject $data1Category4200 -DifferenceObject $data2Category4200 -Property Item_1 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
+      if ($differencesCategory4200) {
+          $groupedDifferences = $differencesCategory4200 | Group-Object -Property Item_1
+          $aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
+          InsertDifferences -differences $aggregatedDifferences -databasePath $databasePath
+      }
+  }
 
   ### Získání všech vlastností z prvního objektu
   $allProperties = $data1 | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name
@@ -123,13 +139,14 @@ Function CompareAndProcessData($data1, $data2, $databasePath) {
   $data1Category7800 = $data1 | Where-Object { $_.Category_ID -eq 7800 }
   $data2Category7800 = $data2 | Where-Object { $_.Category_ID -eq 7800 }
 
-  # Porovnání dat na základě krom Item_7 pro kategorii 7800
-  $differencesCategory7800 = Compare-Object -ReferenceObject $data1Category7800 -DifferenceObject $data2Category7800 -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-  InsertDifferences -differences $differencesCategory7800 -databasePath $databasePath
-
-  # Zbytek dat pro další porovnání + vyhozeni kategori 3600 (info o zaplneni RAM)
-  $data1Other = $data1 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 -and $_.Category_ID -ne 3600 }
-  $data2Other = $data2 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 -and $_.Category_ID -ne 3600 }
+  if (-not $data1Category7800 -or -not $data2Category7800) {
+    Write-Host "Nebyla nalezena žádná data pro kategorii 7800."
+  } else {
+    $differencesCategory7800 = Compare-Object -ReferenceObject $data1Category7800 -DifferenceObject $data2Category7800 -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
+    if ($differencesCategory7800) {
+      InsertDifferences -differences $differencesCategory7800 -databasePath $databasePath
+    }
+  }
 
   # Specifikujte vlastnosti, které NEchcete porovnávat
   $excludeProperties = @('Audit_ID', 'Record_Ordinal', 'Computer_ID', 'Category_ID')
@@ -137,9 +154,18 @@ Function CompareAndProcessData($data1, $data2, $databasePath) {
   # Vyfiltrujte všechny vlastnosti, které chcete porovnat (vše kromě vyloučených)
   $propertiesToCompare = $allProperties | Where-Object { $_ -notin $excludeProperties }
 
-  # Porovnání zbylých dat
-  $differencesOther = Compare-Object -ReferenceObject $data1Other -DifferenceObject $data2Other -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-  InsertDifferences -differences $differencesOther -databasePath $databasePath
+  # Zbytek dat pro další porovnání
+  $data1Other = $data1 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 }
+  $data2Other = $data2 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 }
+
+  if (-not $data1Other -or -not $data2Other) {
+    Write-Host "Nebyla nalezena žádná zbylá data."
+  } else {
+    $differencesOther = Compare-Object -ReferenceObject $data1Other -DifferenceObject $data2Other -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
+    if ($differencesOther) {
+      InsertDifferences -differences $differencesOther -databasePath $databasePath
+    }
+  }
 }
 
 # Rozhodování mezi automatickým a manuálním režimem
@@ -177,6 +203,11 @@ SELECT * FROM Audit_Data
 WHERE Audit_ID = $auditId2
 "@
 
-    AnalyzeDatabases $databasePath1 $sqlQuery1 $databasePath2 $sqlQuery2
+    # Přidání promptu pro kategorie, které nechce uživatel zahrnout
+    Write-Host "Zadejte čísla kategorií oddělené čárkou, které nechcete zahrnout do porovnání (např. 1000,4200) !popisky v readme!:"
+    $excludedCategories = Read-Host
+    $excludedCategoryList = $excludedCategories -split ',' | ForEach-Object { $_.Trim() }
+
+    AnalyzeDatabases $databasePath1 $sqlQuery1 $databasePath2 $sqlQuery2 $excludedCategoryList
   }
 }
