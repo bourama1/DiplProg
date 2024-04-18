@@ -62,9 +62,15 @@ function ExecuteQuery ($databasePath, $sqlQuery) {
     $adapter = [System.Data.OleDb.OleDbDataAdapter]::new($command)
     $dataset = [System.Data.DataSet]::new()
 
-    $connection.Open()
-    $adapter.Fill($dataset) | Out-Null
-    $connection.Close()
+    try {
+        $connection.Open()
+        $adapter.Fill($dataset) | Out-Null
+    } catch {
+        Write-Error "Error executing query: $sqlQuery"
+        Write-Error "Error message: $_"
+    } finally {
+        $connection.Close()
+    }
 
     return $dataset.Tables[0]
 }
@@ -214,17 +220,42 @@ function Get-NewAuditId {
 
 <#
 .SYNOPSIS
+Escapes single quotes in a string for SQL queries.
+
+.DESCRIPTION
+This function doubles single quotes in a string to prevent SQL injection and syntax errors in SQL queries.
+
+.PARAMETER inputString
+The string to be escaped.
+
+.OUTPUTS
+System.String
+The escaped string suitable for SQL queries.
+
+.EXAMPLE
+$escapedString = EscapeSQLString "O'Reilly"
+# Returns "O''Reilly"
+#>
+function EscapeSQLString($inputString) {
+    return $inputString -replace "'", "''"
+}
+
+<#
+.SYNOPSIS
 Inserts differences and corresponding rows into a new database.
 
 .DESCRIPTION
 This function takes a difference object as input and inserts the differences and their corresponding rows into a new database. It iterates through the differences array and checks if there is a corresponding row. If a corresponding row is found, it inserts both the difference and the corresponding row into the database. It also keeps track of the stored indexes to avoid duplicate inserts.
 
-.PARAMETER difference
-The difference object containing the data to be inserted into the database.
+.PARAMETER differences
+The array of difference objects containing the data to be inserted into the database.
+
+.PARAMETER databasePath
+The path to the database where the differences should be inserted.
 
 .EXAMPLE
-InsertDifference -difference $difference
-# Inserts the differences and corresponding rows into the database.
+InsertDifferences -differences $differences -databasePath "C:\Data\Database.mdb"
+# Inserts the differences and corresponding rows into the database located at "C:\Data\Database.mdb".
 
 .NOTES
 This function requires the ExecuteQuery function from the functions.ps1 file to be loaded.
@@ -232,11 +263,19 @@ This function requires the ExecuteQuery function from the functions.ps1 file to 
 .LINK
 functions.ps1
 #>
-function InsertDifferences($differences) {
+function InsertDifferences($differences, $databasePath) {
     # Uložení rozdílů a odpovídajících řádků do nové databáze
     $storedIndexes = @()  # Pole indexů uložených rozdílů
     for ($i = 0; $i -lt $differences.Count; $i++) {
         $difference = $differences[$i]
+
+        # Automatické escapování všech řetězcových vlastností v objektu $difference
+        foreach ($prop in $difference.PSObject.Properties) {
+            if ($prop.Value -is [string]) {
+                $prop.Value = EscapeSQLString $prop.Value
+            }
+        }
+
         # Pokud existuje odpovídající řádek
         if ($difference.SideIndicator -eq "=>") {
             # Vložení do databáze

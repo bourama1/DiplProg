@@ -23,7 +23,7 @@ do {
 
 			$actions = @(
         { & ".\createWinAuditDB.ps1" -databasePath $databasePath },
-        { & ".\compareWinAuditDB.ps1" -databasePath $databasePath },
+        { & ".\compareWinAuditDB.ps1" -databasePath $databasePath -mode "automatic" },
         { & ".\createBiosDB.ps1" -databasePath $databasePath },
         { & ".\compareBiosDB.ps1" -databasePath $databasePath },
         { & ".\createFirewallRulesDB.ps1" -databasePath $databasePath },
@@ -56,7 +56,7 @@ do {
     }
     '3' {
       Write-Host "Probíhá akce 3"
-      & ".\compareWinAuditDB.ps1"
+      & ".\compareWinAuditDB.ps1" -mode "manual"
     }
     '4' {
       Write-Host "Probíhá akce 4"

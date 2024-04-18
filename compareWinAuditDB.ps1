@@ -1,34 +1,19 @@
 param(
-  [string]$databasePath = $null
+  [string]$databasePath = $null,
+  [ValidateSet("automatic", "manual")]
+  [string]$mode = "automatic"
 )
 
 # Načtení souboru s funkcemi
 . .\functions.ps1
 
-if (-not $databasePath) {
-  Write-Host "Vyberte databázi:"
-  $databasePath = GetFileName("D:\Documents\DiplProg")
-}
+Function AnalyzeDatabases($path1, $query1, $path2, $query2) {
+  $tableName = "Rozdily"
+  if (TableExists $tableName $path1) {
+    DropTable $tableName $path1
+  }
 
-# SQL dotaz pro vybrání dat z tabulky
-$sqlQuery1 = @"
-SELECT * FROM Audit_Data
-WHERE Audit_ID = (SELECT MAX(Audit_ID) FROM Audit_Data)
-"@
-
-$sqlQuery2 = @"
-SELECT * FROM Audit_Data
-WHERE Audit_ID = (SELECT MAX(Audit_ID) FROM Audit_Data WHERE Audit_ID < (SELECT MAX(Audit_ID) FROM Audit_Data))
-"@
-
-# Zjisteni jestli jiz existuje tabulka rozdily, popr. jeji smazani
-$tableName = "Rozdily"
-if (TableExists $tableName $databasePath) {
-  DropTable $tableName $databasePath
-}
-
-# Vytvoření tabulky v nové databázi pro uložení rozdílů
-$createTableScript = @"
+  $createTableScript = @"
 CREATE TABLE Rozdily (
     ID AUTOINCREMENT PRIMARY KEY,
     Audit_ID INT,
@@ -87,65 +72,111 @@ CREATE TABLE Rozdily (
     Item_50 TEXT(255)
 );
 "@
-ExecuteQuery -databasePath $databasePath -sqlQuery $createTableScript
+  ExecuteQuery -databasePath $path1 -sqlQuery $createTableScript
 
-# Vykonání dotazu pro obě databáze
-$data1 = ExecuteQuery -databasePath $databasePath -sqlQuery $sqlQuery1
-$data2 = ExecuteQuery -databasePath $databasePath -sqlQuery $sqlQuery2
+  # Vykonání dotazu pro obě databáze
+  $data1 = ExecuteQuery -databasePath $path1 -sqlQuery $query1
+  $data2 = ExecuteQuery -databasePath $path2 -sqlQuery $query2
 
-# Načtení dat z kategorie 1000
-$data1Category1000 = $data1 | Where-Object { $_.Category_ID -eq 1000 }
-$data2Category1000 = $data2 | Where-Object { $_.Category_ID -eq 1000 }
+  # Logika pro porovnání a zpracování dat
+  CompareAndProcessData $data1 $data2 $path1
+}
 
-# Porovnání dat pouze na základě Item_4 pro kategorii 1000
-$differencesCategory1000 = Compare-Object -ReferenceObject $data1Category1000 -DifferenceObject $data2Category1000 -Property Item_4 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-$groupedDifferences = $differencesCategory1000 | Group-Object -Property Item_4
-$aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
 
-# Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_4
-# Voláme InsertDifferences s tímto nově agregovaným seznamem
-InsertDifferences -differences $aggregatedDifferences
+Function CompareAndProcessData($data1, $data2, $databasePath) {
+  # Načtení dat z kategorie 1000
+  $data1Category1000 = $data1 | Where-Object { $_.Category_ID -eq 1000 }
+  $data2Category1000 = $data2 | Where-Object { $_.Category_ID -eq 1000 }
 
-# Načtení dat z kategorie 4200
-$data1Category4200 = $data1 | Where-Object { $_.Category_ID -eq 4200 }
-$data2Category4200 = $data2 | Where-Object { $_.Category_ID -eq 4200 }
+  # Porovnání dat pouze na základě Item_4 pro kategorii 1000
+  $differencesCategory1000 = Compare-Object -ReferenceObject $data1Category1000 -DifferenceObject $data2Category1000 -Property Item_4 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
+  $groupedDifferences = $differencesCategory1000 | Group-Object -Property Item_4
+  $aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
 
-# Porovnání dat pouze na základě Item_1 pro kategorii 4200
-$differencesCategory4200 = Compare-Object -ReferenceObject $data1Category4200 -DifferenceObject $data2Category4200 -Property Item_1 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-$groupedDifferences = $differencesCategory4200 | Group-Object -Property Item_1
-$aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
+  # Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_4
+  # Voláme InsertDifferences s tímto nově agregovaným seznamem
+  InsertDifferences -differences $aggregatedDifferences -databasePath $databasePath
 
-# Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_1
-# Voláme InsertDifferences s tímto nově agregovaným seznamem
-InsertDifferences -differences $aggregatedDifferences
+  # Načtení dat z kategorie 4200
+  $data1Category4200 = $data1 | Where-Object { $_.Category_ID -eq 4200 }
+  $data2Category4200 = $data2 | Where-Object { $_.Category_ID -eq 4200 }
 
-### Získání všech vlastností z prvního objektu
-$allProperties = $data1 | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name
+  # Porovnání dat pouze na základě Item_1 pro kategorii 4200
+  $differencesCategory4200 = Compare-Object -ReferenceObject $data1Category4200 -DifferenceObject $data2Category4200 -Property Item_1 -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
+  $groupedDifferences = $differencesCategory4200 | Group-Object -Property Item_1
+  $aggregatedDifferences = AggregateDifferences -groupedDifferences $groupedDifferences
 
-# Specifikujte vlastnosti, které NEchcete porovnávat
-$excludeProperties = @('Audit_ID', 'Record_Ordinal', 'Computer_ID', 'Category_ID', 'Item_7')
+  # Nyní máme $aggregatedDifferences obsahující pouze jeden záznam pro každý unikátní Item_1
+  # Voláme InsertDifferences s tímto nově agregovaným seznamem
+  InsertDifferences -differences $aggregatedDifferences -databasePath $databasePath
 
-# Vyfiltrujte všechny vlastnosti, které chcete porovnat (vše kromě vyloučených)
-$propertiesToCompare = $allProperties | Where-Object { $_ -notin $excludeProperties }
+  ### Získání všech vlastností z prvního objektu
+  $allProperties = $data1 | Get-Member -MemberType Properties | Select-Object -ExpandProperty Name
 
-# Načtení dat z kategorie 7800
-$data1Category7800 = $data1 | Where-Object { $_.Category_ID -eq 7800 }
-$data2Category7800 = $data2 | Where-Object { $_.Category_ID -eq 7800 }
+  # Specifikujte vlastnosti, které NEchcete porovnávat
+  $excludeProperties = @('Audit_ID', 'Record_Ordinal', 'Computer_ID', 'Category_ID', 'Item_7')
 
-# Porovnání dat na základě krom Item_7 pro kategorii 7800
-$differencesCategory7800 = Compare-Object -ReferenceObject $data1Category7800 -DifferenceObject $data2Category7800 -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-InsertDifferences($differencesCategory7800)
+  # Vyfiltrujte všechny vlastnosti, které chcete porovnat (vše kromě vyloučených)
+  $propertiesToCompare = $allProperties | Where-Object { $_ -notin $excludeProperties }
 
-# Zbytek dat pro další porovnání + vyhozeni kategori 3600 (info o zaplneni RAM)
-$data1Other = $data1 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 -and $_.Category_ID -ne 3600 }
-$data2Other = $data2 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 -and $_.Category_ID -ne 3600 }
+  # Načtení dat z kategorie 7800
+  $data1Category7800 = $data1 | Where-Object { $_.Category_ID -eq 7800 }
+  $data2Category7800 = $data2 | Where-Object { $_.Category_ID -eq 7800 }
 
-# Specifikujte vlastnosti, které NEchcete porovnávat
-$excludeProperties = @('Audit_ID', 'Record_Ordinal', 'Computer_ID', 'Category_ID')
+  # Porovnání dat na základě krom Item_7 pro kategorii 7800
+  $differencesCategory7800 = Compare-Object -ReferenceObject $data1Category7800 -DifferenceObject $data2Category7800 -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
+  InsertDifferences -differences $differencesCategory7800 -databasePath $databasePath
 
-# Vyfiltrujte všechny vlastnosti, které chcete porovnat (vše kromě vyloučených)
-$propertiesToCompare = $allProperties | Where-Object { $_ -notin $excludeProperties }
+  # Zbytek dat pro další porovnání + vyhozeni kategori 3600 (info o zaplneni RAM)
+  $data1Other = $data1 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 -and $_.Category_ID -ne 3600 }
+  $data2Other = $data2 | Where-Object { $_.Category_ID -ne 1000 -and $_.Category_ID -ne 4200 -and $_.Category_ID -ne 7800 -and $_.Category_ID -ne 3600 }
 
-# Porovnání zbylých dat
-$differencesOther = Compare-Object -ReferenceObject $data1Other -DifferenceObject $data2Other -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
-InsertDifferences($differencesOther)
+  # Specifikujte vlastnosti, které NEchcete porovnávat
+  $excludeProperties = @('Audit_ID', 'Record_Ordinal', 'Computer_ID', 'Category_ID')
+
+  # Vyfiltrujte všechny vlastnosti, které chcete porovnat (vše kromě vyloučených)
+  $propertiesToCompare = $allProperties | Where-Object { $_ -notin $excludeProperties }
+
+  # Porovnání zbylých dat
+  $differencesOther = Compare-Object -ReferenceObject $data1Other -DifferenceObject $data2Other -Property $propertiesToCompare -PassThru | Where-Object { $_.Property -notin @('Audit_ID', 'Record_Ordinal', "Computer_ID", "Category_ID") }
+  InsertDifferences -differences $differencesOther -databasePath $databasePath
+}
+
+# Rozhodování mezi automatickým a manuálním režimem
+switch ($mode) {
+  "automatic" {
+    if (-not $databasePath) {
+      Write-Host "Vyberte databázi:"
+      $databasePath = GetFileName("D:\Documents\DiplProg")
+    }
+
+    $sqlQuery1 = "SELECT * FROM Audit_Data WHERE Audit_ID = (SELECT MAX(Audit_ID) FROM Audit_Data)"
+    $sqlQuery2 = "SELECT * FROM Audit_Data WHERE Audit_ID = (SELECT MAX(Audit_ID) FROM Audit_Data WHERE Audit_ID < (SELECT MAX(Audit_ID) FROM Audit_Data))"
+
+    AnalyzeDatabases $databasePath $sqlQuery1 $databasePath $sqlQuery2
+  }
+
+  "manual" {
+    Write-Host "Vyberte soubor pro první databázi:"
+    $databasePath1 = GetFileName("D:\Documents\DiplProg")
+    Write-Host "Zadejte Audit_ID pro první databázi:"
+    $auditId1 = Read-Host
+
+    $sqlQuery1 = @"
+SELECT * FROM Audit_Data
+WHERE Audit_ID = $auditId1
+"@
+
+    Write-Host "Vyberte soubor pro druhou databázi:"
+    $databasePath2 = GetFileName("D:\Documents\DiplProg")
+    Write-Host "Zadejte Audit_ID pro druhou databázi:"
+    $auditId2 = Read-Host
+
+    $sqlQuery2 = @"
+SELECT * FROM Audit_Data
+WHERE Audit_ID = $auditId2
+"@
+
+    AnalyzeDatabases $databasePath1 $sqlQuery1 $databasePath2 $sqlQuery2
+  }
+}
